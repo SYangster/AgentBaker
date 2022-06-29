@@ -115,6 +115,15 @@ function Adjust-PageFileSize()
 
 function Adjust-DynamicPortRange()
 {
+    # https://docs.microsoft.com/en-us/azure/virtual-network/virtual-networks-faq#what-protocols-can-i-use-within-vnets
+    # Default UDP Dynamic Port Range in Windows server: Start Port: 49152, Number of Ports : 16384. Range: [49152, 65535]
+    # Exclude UDP source port 65330: Start Port: 49152, Number of Ports : 16178. Range: [49152, 65329]
+    # This only excludes the port in AKS Windows nodes but will not impact Windows containers.
+    # Reference: https://github.com/Azure/AKS/issues/2988
+    # List command: netsh int ipv4 show excludedportrange udp
+    # Need to retry the command since it may fail for "The process cannot access the file because it is being used by another process."
+    Invoke-Executable -Executable "netsh.exe" -ArgList @("int", "ipv4", "add", "excludedportrange", "udp", "65330", "1", "persistent") -Retries 30 -RetryDelaySeconds 2 -ExitCode $global:WINDOWS_CSE_ERROR_EXCLUDE_UDP_SOURCE_PORT
+
     # Kube-proxy reserves 63 ports per service which limits clusters with Windows nodes
     # to ~225 services if default port reservations are used.
     # https://docs.microsoft.com/en-us/virtualization/windowscontainers/kubernetes/common-problems#load-balancers-are-plumbed-inconsistently-across-the-cluster-nodes
@@ -122,7 +131,7 @@ function Adjust-DynamicPortRange()
     #
     # The fix which reduces dynamic port usage is still needed for DSR mode
     # Update the range to [33000, 65535] to avoid that it conflicts with NodePort range (30000 - 32767)
-    Invoke-Executable -Executable "netsh.exe" -ArgList @("int", "ipv4", "set", "dynamicportrange", "tcp", "33000", "32536")
+    Invoke-Executable -Executable "netsh.exe" -ArgList @("int", "ipv4", "set", "dynamicportrange", "tcp", "33000", "32536") -ExitCode $global:WINDOWS_CSE_ERROR_SET_TCP_PORT_RANGE
 }
 
 # TODO: should this be in this PR?

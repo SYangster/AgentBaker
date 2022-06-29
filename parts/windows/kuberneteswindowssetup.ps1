@@ -227,6 +227,10 @@ try
         Write-Log "The script has been executed before, will exit without doing anything."
         return
     }
+
+    # Run this before any other commands to avoid that the UDP source port 65330 is used
+    Adjust-DynamicPortRange
+
     # Install OpenSSH if SSH enabled
     $sshEnabled = [System.Convert]::ToBoolean("{{ WindowsSSHEnabled }}")
 
@@ -421,7 +425,6 @@ try
 
     Write-Log "Update service failure actions"
     Update-ServiceFailureActions -ContainerRuntime $global:ContainerRuntime
-    Adjust-DynamicPortRange
     Register-LogsCleanupScriptTask
     Register-NodeResetScriptTask
     Update-DefenderPreferences

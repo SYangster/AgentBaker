@@ -34,6 +34,13 @@ $global:WINDOWS_CSE_ERROR_NOT_FOUND_MANAGEMENT_IP=29
 $global:WINDOWS_CSE_ERROR_NOT_FOUND_BUILD_NUMBER=30
 $global:WINDOWS_CSE_ERROR_NOT_FOUND_PROVISIONING_SCRIPTS=31
 $global:WINDOWS_CSE_ERROR_START_NODE_RESET_SCRIPT_TASK=32
+$global:WINDOWS_CSE_ERROR_SET_TCP_PORT_RANGE=33
+$global:WINDOWS_CSE_ERROR_EXCLUDE_UDP_SOURCE_PORT=34
+$global:WINDOWS_CSE_ERROR_BUILD_DOCKER_PAUSE_CONTAINER=35
+$global:WINDOWS_CSE_ERROR_DOCKER_PULL_PAUSE_IMAGE=36
+$global:WINDOWS_CSE_ERROR_DOCKER_TAG_PAUSE_IMAGE=37
+$global:WINDOWS_CSE_ERROR_CONTAINERD_PULL_PAUSE_IMAGE=38
+$global:WINDOWS_CSE_ERROR_CONTAINERD_TAG_PAUSE_IMAGE=39
 
 # This filter removes null characters (\0) which are captured in nssm.exe output when logged through powershell
 filter RemoveNulls { $_ -replace '\0', '' }
@@ -188,17 +195,21 @@ function Invoke-Executable {
         [int[]]
         $AllowedExitCodes = @(0),
         [int]
-        $Retries = 1,
+        $Retries = 0,
         [int]
-        $RetryDelaySeconds = 1
+        $RetryDelaySeconds = 1,
+        [int]
+        $ExitCode = $global:WINDOWS_CSE_ERROR_INVOKE_EXECUTABLE
     )
 
-    for ($i = 0; $i -lt $Retries; $i++) {
-        Write-Log "Running $Executable $ArgList ..."
+    for ($i = 0; $i -le $Retries; $i++) {
+        if ($i -gt 0) {
+            Start-Sleep -Seconds $RetryDelaySeconds
+        }
+        Write-Log "$i - Running $Executable $ArgList ..."
         & $Executable $ArgList
         if ($LASTEXITCODE -notin $AllowedExitCodes) {
-            Write-Log "$Executable returned unsuccessfully with exit code $LASTEXITCODE"
-            Start-Sleep -Seconds $RetryDelaySeconds
+            Write-Log "$i - $Executable returned unsuccessfully with exit code $LASTEXITCODE"
             continue
         }
         else {
@@ -207,7 +218,7 @@ function Invoke-Executable {
         }
     }
 
-    Set-ExitCode -ExitCode $global:WINDOWS_CSE_ERROR_INVOKE_EXECUTABLE -ErrorMessage "Exhausted retries for $Executable $ArgList"
+    Set-ExitCode -ExitCode $ExitCode -ErrorMessage "Failed with retries $Retries for $Executable $ArgList"
 }
 
 function Assert-FileExists {
