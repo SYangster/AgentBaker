@@ -5,6 +5,8 @@ copyPackerFiles() {
   SYSCTL_CONFIG_DEST=/etc/sysctl.d/60-CIS.conf
   RSYSLOG_CONFIG_SRC=/home/packer/rsyslog-d-60-CIS.conf
   RSYSLOG_CONFIG_DEST=/etc/rsyslog.d/60-CIS.conf
+  RSYSLOG_CONFIG_FORWARD_SRC=/home/packer/rsyslog-forward-mdsd.conf
+  RSYSLOG_CONFIG_FORWARD_DEST=/etc/rsyslog.d/60-rsyslog-forward-mdsd.conf
   ETC_ISSUE_CONFIG_SRC=/home/packer/etc-issue
   ETC_ISSUE_CONFIG_DEST=/etc/issue
   ETC_ISSUE_NET_CONFIG_SRC=/home/packer/etc-issue.net
@@ -69,6 +71,7 @@ copyPackerFiles() {
 
   cpAndMode $SYSCTL_CONFIG_SRC $SYSCTL_CONFIG_DEST 644
   cpAndMode $RSYSLOG_CONFIG_SRC $RSYSLOG_CONFIG_DEST 644
+  cpAndMode $RSYSLOG_CONFIG_FORWARD_SRC $RSYSLOG_CONFIG_FORWARD_DEST 644
   cpAndMode $ETC_ISSUE_CONFIG_SRC $ETC_ISSUE_CONFIG_DEST 644
   cpAndMode $ETC_ISSUE_NET_CONFIG_SRC $ETC_ISSUE_NET_CONFIG_DEST 644
   cpAndMode $SSHD_CONFIG_SRC $SSHD_CONFIG_DEST 644
